@@ -11,7 +11,7 @@ export class LoginForm extends Component {
         this.props.socket.emit('user-join', {username, room})
         this.props.socket.on('total-user', (data) => {
             console.log(data)
-            if(data <= 2){
+            if(data <= 4){
                 this.props.onUserLogin(username, room)
             }else{
                 alert('Room Sudah Penuh!')
