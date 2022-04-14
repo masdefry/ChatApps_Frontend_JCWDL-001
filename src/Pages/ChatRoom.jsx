@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 export class ChatRoom extends React.Component {
 
     state = {
+        historyMessage: [],
         message: [],
         usersMessage: [],
         usersTypingMessage: [],
@@ -74,6 +75,10 @@ export class ChatRoom extends React.Component {
                 }
             }
         })
+
+        this.props.socket.on('send-history-message', (data) => {
+            this.setState({ historyMessage: data })
+        })
     }
 
     onSendMessage = () => {
@@ -112,11 +117,44 @@ export class ChatRoom extends React.Component {
                             {
                                 this.state.message?
                                     this.state.message.map((val) => {
-                                        return(
-                                            <div className="alert alert-warning rounded-0 text-center mx-3 mt-3 mb-5" >
-                                                {val.message}
-                                            </div>
-                                        )
+                                        if(val.is_join){
+                                            return(
+                                                <div className="alert alert-warning rounded-0 text-center mx-3 mt-3 mb-5" >
+                                                    {val.message}
+                                                </div>
+                                            )
+                                        }else{
+                                            return(
+                                                <div className="alert alert-danger rounded-0 text-center mx-3 mt-3 mb-5" >
+                                                    {val.message}
+                                                </div>
+                                            )
+                                        }
+                                    })
+                                :
+                                    null
+                            }
+                            {
+                                this.state.historyMessage?
+                                    this.state.historyMessage.map((value) => {
+                                        if(value.username === this.props.user.username){
+                                            return(
+                                                <div className="row justify-content-end mx-1">
+                                                    <div className="px-2 py-2 mx-3 mb-3 rounded bg-primary" style={{display: "inline-block"}}>
+                                                        {value.message}
+                                                    </div>
+                                                </div>
+                                            )
+                                        }else{
+                                            return(
+                                                <div className="row justify-content-start mx-1">
+                                                    {value.username} :
+                                                    <div className="px-2 py-2 mx-3 mb-3 rounded border border-primary" style={{display: "inline-block"}}>
+                                                        {value.message}
+                                                    </div>
+                                                </div>
+                                            )
+                                        }
                                     })
                                 :
                                     null
