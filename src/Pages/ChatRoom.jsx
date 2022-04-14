@@ -6,6 +6,7 @@ export class ChatRoom extends React.Component {
     state = {
         message: [],
         usersMessage: [],
+        usersTypingMessage: [],
         usersOnline: null
     }
 
@@ -22,9 +23,56 @@ export class ChatRoom extends React.Component {
         })
 
         this.props.socket.on('send-message-back', (data) => {
+            // Step1. Update users message
             let arrUsersMessage = this.state.usersMessage
             arrUsersMessage.push(data)
+
+            // Step2. Hapus data user dari dala, typing message -> User yang berhasil send message
+            let arrUsersTypingMessage = this.state.usersTypingMessage
+            let index = null 
+            arrUsersTypingMessage.forEach((value, idx) => {
+                if(value.from === data.from){
+                    index = idx
+                }
+            })
+            if(index !== null){
+                arrUsersTypingMessage.splice(index, 1)
+                this.setState({usersTypingMessage: arrUsersTypingMessage})
+            }
+
             this.setState({usersMessage: arrUsersMessage})
+        })
+
+        this.props.socket.on('typing-message-back', (data) => {
+            let arrUsersTypingMessage = this.state.usersTypingMessage
+
+            if(data.message.length > 0){
+                let index = null 
+
+                arrUsersTypingMessage.forEach((value, idx) => {
+                    if(value.from === data.from){
+                        index = idx 
+                    }
+                })
+
+                if(index === null){
+                    arrUsersTypingMessage.push({ from: data.from })
+                    this.setState({usersTypingMessage: arrUsersTypingMessage})
+                }
+            }else if(data.message.length === 0){
+                let index = null 
+
+                arrUsersTypingMessage.forEach((value, idx) => {
+                    if(value.from === data.from){
+                        index = idx
+                    }
+                })
+
+                if(index !== null){
+                    arrUsersTypingMessage.splice(index, 1)
+                    this.setState({usersTypingMessage: arrUsersTypingMessage})
+                }
+            }
         })
     }
 
@@ -34,6 +82,14 @@ export class ChatRoom extends React.Component {
         }
 
         this.props.socket.emit('send-message', data)
+    }
+
+    onTyping = () => {
+        let data = {
+            message: this.message.value 
+        }
+
+        this.props.socket.emit('typing-message', data)
     }
 
     render() {
@@ -90,8 +146,26 @@ export class ChatRoom extends React.Component {
                                 :
                                     null
                             }
+                            {
+                                this.state.usersTypingMessage?
+                                    this.state.usersTypingMessage.map((value) => {
+                                        return(
+                                            <div className="row justify-content-start mx-1">
+                                                <div className="px-2 py-2 mx-3 mb-3 rounded border border-primary" style={{display: "inline-block"}}>
+                                                    {value.from} Typing Message 
+
+                                                    <div className='spinner-grow text-primary' style={{ width: '5px', height: '5px' }} />
+                                                    <div className='spinner-grow text-primary' style={{ width: '5px', height: '5px' }} />
+                                                    <div className='spinner-grow text-primary' style={{ width: '5px', height: '5px' }} />
+                                                </div>
+                                            </div>
+                                        )
+                                    })
+                                :
+                                    null
+                            }
                             <div style={{position: "fixed", left: "499px", bottom: "0px", right: "499px"}} className='p-4 bg-primary d-flex justfy-content-between'>
-                                <input type='text'  ref={(e) => this.message = e} className='form-control rounded-0 w-100'  />
+                                <input type='text'  ref={(e) => this.message = e} onChange={this.onTyping} className='form-control rounded-0 w-100'  />
                                 <input type='button' onClick={() => this.onSendMessage()}  className='btn btn-warning rounded-0' value='Send' />
                             </div>
                         </div>
