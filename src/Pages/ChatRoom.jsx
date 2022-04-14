@@ -5,6 +5,7 @@ export class ChatRoom extends React.Component {
 
     state = {
         message: [],
+        usersMessage: [],
         usersOnline: null
     }
 
@@ -19,6 +20,20 @@ export class ChatRoom extends React.Component {
         this.props.socket.on('users-online', (data) => {
             this.setState({usersOnline: data})
         })
+
+        this.props.socket.on('send-message-back', (data) => {
+            let arrUsersMessage = this.state.usersMessage
+            arrUsersMessage.push(data)
+            this.setState({usersMessage: arrUsersMessage})
+        })
+    }
+
+    onSendMessage = () => {
+        let data = {
+            message: this.message.value
+        }
+
+        this.props.socket.emit('send-message', data)
     }
 
     render() {
@@ -50,19 +65,34 @@ export class ChatRoom extends React.Component {
                                 :
                                     null
                             }
-                            <div className="row justify-content-end mx-1">
-                                <div className="px-2 py-2 mx-3 mb-3 rounded bg-primary" style={{display: "inline-block"}}>
-                                    Ini Message Saya
-                                </div>
-                            </div>
-                            <div className="row justify-content-start mx-1">
-                                <div className="px-2 py-2 mx-3 mb-3 rounded border border-primary" style={{display: "inline-block"}}>
-                                    Ini Message Kamu
-                                </div>
-                            </div>
+                            {
+                                this.state.usersMessage?
+                                    this.state.usersMessage.map((value) => {
+                                        if(value.from === this.props.user.username){
+                                            return(
+                                                <div className="row justify-content-end mx-1">
+                                                    <div className="px-2 py-2 mx-3 mb-3 rounded bg-primary" style={{display: "inline-block"}}>
+                                                        {value.message}
+                                                    </div>
+                                                </div>
+                                            )
+                                        }else{
+                                            return(
+                                                <div className="row justify-content-start mx-1">
+                                                    {value.from} :
+                                                    <div className="px-2 py-2 mx-3 mb-3 rounded border border-primary" style={{display: "inline-block"}}>
+                                                        {value.message}
+                                                    </div>
+                                                </div>
+                                            )
+                                        }
+                                    })
+                                :
+                                    null
+                            }
                             <div style={{position: "fixed", left: "499px", bottom: "0px", right: "499px"}} className='p-4 bg-primary d-flex justfy-content-between'>
                                 <input type='text'  ref={(e) => this.message = e} className='form-control rounded-0 w-100'  />
-                                <input type='button' className='btn btn-warning rounded-0' value='Send' />
+                                <input type='button' onClick={() => this.onSendMessage()}  className='btn btn-warning rounded-0' value='Send' />
                             </div>
                         </div>
                     </div>
